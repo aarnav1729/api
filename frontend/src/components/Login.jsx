@@ -1,3 +1,5 @@
+// root/frontend/src/components/Login.jsx
+
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -11,18 +13,21 @@ const Login = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const navigate = useNavigate();
 
-  // state variables for OTP verification
+  // State variables for OTP verification
   const [otpSent, setOtpSent] = useState(false);
   const [userOtp, setUserOtp] = useState("");
   const [otpError, setOtpError] = useState("");
+
+  // Base URL can be set as an environment variable or relative
+  const API_BASE_URL = "/api";
 
   const sendOtp = async () => {
     if (!email) {
       alert("Please enter your email.");
       return;
     }
-    try { 
-      const response = await axios.post("http://127.0.0.1:7000/api/send-otp", {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/send-otp`, {
         email,
       });
       if (response.data.success) {
@@ -41,15 +46,25 @@ const Login = ({ onLogin }) => {
     e.preventDefault();
 
     if (!isRegistering) {
-      // login process
+      // Login process
       try {
-        const response = await axios.post("http://0.0.0.0:7000/api/login", {
+        const response = await axios.post(`${API_BASE_URL}/login`, {
           username,
           password,
         });
         if (response.data.success) {
           const userRole = response.data.role;
           onLogin(userRole, response.data.username);
+          // Navigate based on role
+          if (userRole === "admin") {
+            navigate("/admin-dashboard");
+          } else if (userRole === "vendor") {
+            navigate("/vendor-dashboard");
+          } else if (userRole === "factory") {
+            navigate("/factory-dashboard");
+          } else {
+            navigate("/"); // Default route
+          }
         } else {
           alert(response.data.message || "Invalid username or password");
         }
@@ -58,9 +73,9 @@ const Login = ({ onLogin }) => {
         alert("Invalid username or password");
       }
     } else {
-      // registration process
+      // Registration process
       if (!otpSent) {
-        // validate the form fields before sending OTP
+        // Validate the form fields before sending OTP
         if (!username || !password || !email || !contactNumber) {
           alert("Please fill in all the required fields.");
           return;
@@ -73,18 +88,15 @@ const Login = ({ onLogin }) => {
       } else {
         // OTP has been sent, verify OTP
         try {
-          const response = await axios.post(
-            "http://0.0.0.0:7000/api/verify-otp",
-            {
-              email,
-              otp: userOtp,
-            }
-          );
+          const response = await axios.post(`${API_BASE_URL}/verify-otp`, {
+            email,
+            otp: userOtp,
+          });
           if (response.data.success) {
             // OTP verified, proceed to register
             try {
               const registerResponse = await axios.post(
-                "http://0.0.0.0:7000/api/register",
+                `${API_BASE_URL}/register`,
                 {
                   username,
                   password,
